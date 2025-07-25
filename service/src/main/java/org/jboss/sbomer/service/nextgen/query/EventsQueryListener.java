@@ -134,7 +134,7 @@ public class EventsQueryListener extends QueryBaseListener {
         String stringValue = parseValue(ctx.value());
 
         Object finalValue;
-        if (ctx.CONTAINS() != null) {
+        if (ctx.operator().CONTAINS() != null) {
             // for LIKE operator, adding wildcards from both sides
             finalValue = "%" + stringValue + "%";
         } else {
@@ -224,19 +224,19 @@ public class EventsQueryListener extends QueryBaseListener {
     }
 
     private String getOperator(PredicateContext ctx) {
-        if (ctx.EQUAL() != null)
+        if (ctx.operator().EQUAL() != null)
             return "=";
-        if (ctx.NOT_EQUAL() != null)
+        if (ctx.operator().NOT_EQUAL() != null)
             return "!=";
-        if (ctx.GREATER_THAN() != null)
+        if (ctx.operator().GREATER_THAN() != null)
             return ">";
-        if (ctx.LESS_THAN() != null)
+        if (ctx.operator().LESS_THAN() != null)
             return "<";
-        if (ctx.GREATER_THAN_OR_EQUAL() != null)
+        if (ctx.operator().GREATER_THAN_OR_EQUAL() != null)
             return ">=";
-        if (ctx.LESS_THAN_OR_EQUAL() != null)
+        if (ctx.operator().LESS_THAN_OR_EQUAL() != null)
             return "<=";
-        if (ctx.CONTAINS() != null)
+        if (ctx.operator().CONTAINS() != null)
             return "LIKE";
         throw new UnsupportedOperationException("Operator not implemented: " + ctx.getText());
     }

@@ -8,15 +8,24 @@ expression
     ;
 
 predicate
-    : IDENTIFIER (EQUAL | NOT_EQUAL | GREATER_THAN | LESS_THAN | GREATER_THAN_OR_EQUAL | LESS_THAN_OR_EQUAL | CONTAINS) value
+    : IDENTIFIER operator value
+    ;
+
+operator
+    : (EQUAL | NOT_EQUAL | GREATER_THAN | LESS_THAN | GREATER_THAN_OR_EQUAL | LESS_THAN_OR_EQUAL | CONTAINS)
     ;
 
 value: STRING_IN_QUOTES;
 
+// logical operators
 AND: 'AND' | 'and';
 OR: 'OR' | 'or';
+
+// parentheses
 LPAREN: '(';
 RPAREN: ')';
+
+// binary operators
 EQUAL: '=';
 NOT_EQUAL: '!=';
 GREATER_THAN: '>';
