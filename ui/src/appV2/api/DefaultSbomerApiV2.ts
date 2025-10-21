@@ -17,13 +17,7 @@
 ///
 
 import axios, { Axios, AxiosError } from 'axios';
-import {
-  SbomerApi,
-  SbomerEvent,
-  SbomerGeneration,
-  SbomerManifest,
-  SbomerStats
-} from '../types';
+import { SbomerApi, SbomerEvent, SbomerGeneration, SbomerManifest, SbomerStats } from '../types';
 
 type Options = {
   baseUrl: string;
@@ -37,17 +31,7 @@ export class DefaultSbomerApiV2 implements SbomerApi {
 
   public static getInstance(): SbomerApi {
     if (!DefaultSbomerApiV2._instance) {
-      var sbomerUrl = process.env.REACT_APP_SBOMER_URL;
-
-      if (!sbomerUrl) {
-        const url = window.location.href;
-
-        if (url.includes('stage')) {
-          sbomerUrl = 'https://sbomer-stage.pnc.engineering.redhat.com';
-        } else {
-          sbomerUrl = 'https://sbomer.pnc.engineering.redhat.com';
-        }
-      }
+      let sbomerUrl = (window as any).SBOMER_CONFIG?.API_URL;
 
       DefaultSbomerApiV2._instance = new DefaultSbomerApiV2({ baseUrl: sbomerUrl });
     }
@@ -73,9 +57,10 @@ export class DefaultSbomerApiV2 implements SbomerApi {
     );
   }
 
-  async getManifests(
-    pagination: { pageSize: number; pageIndex: number }
-  ): Promise<{ data: SbomerManifest[]; total: number }> {
+  async getManifests(pagination: {
+    pageSize: number;
+    pageIndex: number;
+  }): Promise<{ data: SbomerManifest[]; total: number }> {
     const response = await fetch(
       `${this.baseUrl}/api/v1beta2/manifests?pageSize=${pagination.pageSize}&pageIndex=${pagination.pageIndex}`,
     );
@@ -94,7 +79,7 @@ export class DefaultSbomerApiV2 implements SbomerApi {
       data.content.forEach((sbom: any) => {
         sboms.push(new SbomerManifest(sbom));
       });
-    }else {
+    } else {
     }
 
     return { data: sboms, total: data.totalHits };
@@ -130,13 +115,13 @@ export class DefaultSbomerApiV2 implements SbomerApi {
   }
 
   async getManifestJson(id: string): Promise<any> {
-  const response = await fetch(`${this.baseUrl}/api/v1beta2/manifests/${id}/bom`);
-  if (response.status !== 200) {
-    const body = await response.text();
-    throw new Error('Failed to fetch manifest JSON, got: ' + response.status + " response: '" + body + "'");
+    const response = await fetch(`${this.baseUrl}/api/v1beta2/manifests/${id}/bom`);
+    if (response.status !== 200) {
+      const body = await response.text();
+      throw new Error('Failed to fetch manifest JSON, got: ' + response.status + " response: '" + body + "'");
+    }
+    return await response.json();
   }
-  return await response.json();
-}
 
   async getLogPaths(generationId: string): Promise<Array<string>> {
     const response = await this.client.get(`/api/v1beta2/generations/${generationId}/logs`);
@@ -178,9 +163,7 @@ export class DefaultSbomerApiV2 implements SbomerApi {
     if (response.status != 200) {
       const body = await response.text();
 
-      throw new Error(
-        'Failed fetching generations from SBOMer, got: ' + response.status + " response: '" + body + "'",
-      );
+      throw new Error('Failed fetching generations from SBOMer, got: ' + response.status + " response: '" + body + "'");
     }
 
     const data = await response.json();
@@ -208,7 +191,6 @@ export class DefaultSbomerApiV2 implements SbomerApi {
     },
     query: string,
   ): Promise<{ data: SbomerEvent[]; total: number }> {
-
     const response = await fetch(
       `${this.baseUrl}/api/v1beta2/events/?pageSize=${pagination.pageSize}&pageIndex=${pagination.pageIndex}&query=${encodeURIComponent(query)}`,
     );
@@ -216,15 +198,12 @@ export class DefaultSbomerApiV2 implements SbomerApi {
     if (response.status != 200) {
       const body = await response.text();
 
-      throw new Error(
-        'Failed fetching events from SBOMer, got: ' + response.status + " response: '" + body + "'",
-      );
+      throw new Error('Failed fetching events from SBOMer, got: ' + response.status + " response: '" + body + "'");
     }
 
     const data = await response.json();
-    data.id
+    data.id;
     const requests: SbomerEvent[] = [];
-
 
     if (data.content) {
       // basic response without any filters applied
