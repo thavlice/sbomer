@@ -17,6 +17,7 @@
  */
 package org.jboss.sbomer.core.test.unit;
 
+import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.createComponent;
 import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.getHashesFromAnalyzedDistribution;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,10 +37,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.cyclonedx.Version;
+import org.cyclonedx.generators.json.BomJsonGenerator;
 import org.cyclonedx.model.Bom;
 import org.cyclonedx.model.Component;
 import org.cyclonedx.model.Component.Type;
 import org.cyclonedx.model.Dependency;
+import org.cyclonedx.model.Evidence;
 import org.cyclonedx.model.ExternalReference;
 import org.cyclonedx.model.Hash;
 import org.cyclonedx.model.Hash.Algorithm;
@@ -49,6 +53,8 @@ import org.cyclonedx.model.Metadata;
 import org.cyclonedx.model.OrganizationalEntity;
 import org.cyclonedx.model.Property;
 import org.cyclonedx.model.Service;
+import org.cyclonedx.model.component.evidence.Identity;
+import org.cyclonedx.model.component.evidence.Identity.Field;
 import org.cyclonedx.model.metadata.ToolInformation;
 import org.jboss.pnc.dto.Build;
 import org.jboss.pnc.dto.BuildConfigurationRevision;
@@ -64,9 +70,13 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.github.packageurl.MalformedPackageURLException;
+import com.github.packageurl.PackageURL;
 
 class SbomUtilsTest {
 
@@ -552,5 +562,75 @@ class SbomUtilsTest {
         assertNotNull(urls);
         assertEquals(1, urls.size());
         assertEquals("https://www.redhat.com", urls.get(0));
+    }
+
+    @ParameterizedTest(name = "{index} => filename=''{0}'', expectedPurl=''{1}''")
+    @CsvSource({
+            // Input purl //Expected PURL
+            "pkg:generic/jboss-eap-7.4.22-runtime-maven-repository.zip?repository_url=https%3A%2F%2Fmaven.repository.redhat.com%2Fga%2F,pkg:generic/jboss-eap-runtime-maven-repository.zip@7.4.22?repository_url=https%3A%2F%2Fmaven.repository.redhat.com%2Fga%2F",
+            "pkg:generic/jboss-eap-7.4.22-CR1-runtime-maven-repository.zip,pkg:generic/jboss-eap-runtime-maven-repository.zip@7.4.22-CR1",
+            "pkg:generic/jboss-eap-7.4.22.CR1-runtime-maven-repository.zip,pkg:generic/jboss-eap-runtime-maven-repository.zip@7.4.22.CR1",
+            "pkg:generic/jboss-eap-7.4.22.runtime-maven-repository.zip,pkg:generic/jboss-eap.runtime-maven-repository.zip@7.4.22",
+            "pkg:generic/jboss-eap-7.4-runtime-maven-repository.zip,pkg:generic/jboss-eap-runtime-maven-repository.zip@7.4" })
+    void shouldGetVersionFromPurl(String inputPurl, String expectedPurl) {
+        Component c = new Component();
+        c.setPurl(inputPurl);
+        Evidence e = new Evidence();
+        e.setIdentities(List.of(purlToIdent(inputPurl)));
+        c.setEvidence(e);
+
+        SbomUtils.setPurlVersionFromGeneric(c);
+        Bom bom = new Bom();
+        bom.addComponent(c);
+        BomJsonGenerator generator = new BomJsonGenerator(bom, Version.VERSION_16);
+        assertEquals(expectedPurl, c.getEvidence().getIdentities().get(1).getConcludedValue());
+    }
+
+    private Identity purlToIdent(String purl) {
+        try {
+            return purlToIdent(new PackageURL(purl));
+        } catch (MalformedPackageURLException e) {
+            fail(e);
+        }
+        return null;
+    }
+
+    private Identity purlToIdent(PackageURL purl) {
+        Identity i = new Identity();
+        i.setConcludedValue(purl.canonicalize());
+        i.setField(Field.PURL);
+        return i;
+    }
+
+    @Test
+    void testMissingEvidencesNPENotThrown() {
+        try {
+            String purl = "pkg:generic/jboss-eap-7.4-runtime-maven-repository.zip";
+            Component c = new Component();
+            c.setPurl(purl);
+            SbomUtils.setPurlVersionFromGeneric(c);
+            assertEquals(
+                    "pkg:generic/jboss-eap-runtime-maven-repository.zip@7.4",
+                    c.getEvidence().getIdentities().get(0).getConcludedValue());
+        } catch (NullPointerException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testMissingPurlNPENotThrown() {
+        try {
+            String purl = "pkg:generic/jboss-eap-7.4-runtime-maven-repository.zip";
+            Component c = new Component();
+            Evidence e = new Evidence();
+            e.setIdentities(List.of(purlToIdent(purl)));
+            c.setEvidence(e);
+            SbomUtils.setPurlVersionFromGeneric(c);
+            assertEquals(
+                    "pkg:generic/jboss-eap-runtime-maven-repository.zip@7.4",
+                    c.getEvidence().getIdentities().get(1).getConcludedValue());
+        } catch (NullPointerException e) {
+            fail(e);
+        }
     }
 }

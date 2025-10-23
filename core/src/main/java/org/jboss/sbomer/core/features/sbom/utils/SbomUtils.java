@@ -1761,4 +1761,120 @@ public class SbomUtils {
             components.addAll(mergedComponents.values());
         }
     }
+
+    /*
+     * Most of this functionality lives in GenericPurlWrapperUtil
+     */
+    public static void setPurlVersionFromGeneric(Component c) {
+        // Grab toplevel and evidence purls
+        final Optional<PackageURL> topLevelPurl = Optional.ofNullable(c.getPurl()).map(purl -> {
+            try {
+                return new PackageURL(purl);
+            } catch (MalformedPackageURLException e) {
+                // This should never be reached based on your assumption.
+                // If it is, it will crash the current thread.
+                throw new RuntimeException("Impossible exception thrown for PURL: " + purl, e);
+            }
+        });
+
+        final Optional<PackageURL> evidencePurl = Optional.ofNullable(c.getEvidence())
+                .map(Evidence::getIdentities)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(identity -> Field.PURL.equals(identity.getField()))
+                .map(Identity::getConcludedValue)
+                .map(purlString -> {
+                    if (purlString == null || purlString.isBlank())
+                        return null;
+                    try {
+                        return new PackageURL(purlString);
+                    } catch (MalformedPackageURLException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .filter(purl -> "generic".equals(purl.getType()))
+                .filter(purl -> purl.getVersion() == null || purl.getVersion().isBlank())
+                .findFirst();
+
+        // We cant't do anything here, early exit
+        if (topLevelPurl.isEmpty() && evidencePurl.isEmpty()) {
+            log.warn("Cannot find a valid versionless purl in component: {}", c.getBomRef());
+            return;
+        }
+
+        Optional<PackageURL> purlToModify;
+
+        if (evidencePurl.isPresent() && topLevelPurl.isPresent()) {
+            PackageURL evidence = evidencePurl.get();
+            PackageURL topLevel = topLevelPurl.get();
+
+            if (topLevel.canonicalize().length() > evidence.canonicalize().length()) {
+                purlToModify = Optional.of(topLevel);
+            } else {
+                purlToModify = Optional.of(evidence);
+            }
+        } else {
+            purlToModify = evidencePurl.or(() -> topLevelPurl);
+        }
+
+        if (purlToModify.isEmpty()) {
+            return;
+        }
+
+        // Find and replace in evidence.identities
+        try {
+            GenericPurlWrapperUtil newEvidencePurl = new GenericPurlWrapperUtil(purlToModify.get());
+            // We couldn't get a version, dont do anything
+            if (newEvidencePurl.getVersionedPurl() == null)
+                return;
+            // Build our new Idententy Object and either append or replace
+            appendOrReplaceIdentity(c, newEvidencePurl.getPackageURL(), newEvidencePurl.getAsIdentity(), true);
+        } catch (MalformedPackageURLException e) {
+            log.warn("Can't extract version from generic purl with error: {}", e);
+        }
+    }
+
+    private static void appendOrReplaceIdentity(
+            Component c,
+            PackageURL originalPurl,
+            Identity newIdentity,
+            boolean replace) {
+        List<Identity> currentIdentities = Optional.ofNullable(c.getEvidence())
+                .map(Evidence::getIdentities)
+                .orElse(new ArrayList<>());
+        List<Identity> updatedIdentities;
+
+        if (replace) {
+            List<Identity> mappedList = currentIdentities.stream().map(identity -> {
+                boolean isMatch = false;
+                if ("purl".equals(identity.getField()) && identity.getConcludedValue() != null) {
+                    try {
+                        isMatch = new PackageURL(identity.getConcludedValue()).equals(originalPurl);
+                    } catch (MalformedPackageURLException e) {
+                        isMatch = false;
+                    }
+                }
+                return isMatch ? newIdentity : identity;
+            }).collect(Collectors.toList());
+
+            updatedIdentities = new ArrayList<>(mappedList);
+            // If there is no existing match then append it anyway
+            if (!updatedIdentities.contains(newIdentity)) {
+                updatedIdentities.add(newIdentity);
+            }
+
+        } else {
+            // Just append it without attempting to replace
+            updatedIdentities = new ArrayList<>(currentIdentities);
+            updatedIdentities.add(newIdentity);
+        }
+
+        // If we have no evidences then create it
+        if (c.getEvidence() == null)
+            c.setEvidence(new Evidence());
+
+        c.getEvidence().setIdentities(updatedIdentities);
+    }
+
 }
