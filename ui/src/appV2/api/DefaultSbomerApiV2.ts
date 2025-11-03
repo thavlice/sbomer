@@ -19,6 +19,14 @@
 import axios, { Axios, AxiosError } from 'axios';
 import { SbomerApi, SbomerEvent, SbomerGeneration, SbomerManifest, SbomerStats } from '../types';
 
+declare global {
+  interface Window {
+    _env_?: {
+      API_URL?: string;
+    };
+  }
+}
+
 type Options = {
   baseUrl: string;
 };
@@ -31,7 +39,7 @@ export class DefaultSbomerApiV2 implements SbomerApi {
 
   public static getInstance(): SbomerApi {
     if (!DefaultSbomerApiV2._instance) {
-      let sbomerUrl = (window as any).SBOMER_CONFIG?.API_URL;
+      const sbomerUrl: string = window._env_?.API_URL || 'http://localhost:3000';
 
       DefaultSbomerApiV2._instance = new DefaultSbomerApiV2({ baseUrl: sbomerUrl });
     }

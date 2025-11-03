@@ -24,6 +24,12 @@ export type SbomerErrorResponse = {
   message: string;
 };
 
+export interface Window {
+  _env_: {
+    API_URL: string;
+  };
+}
+
 /** @public */
 export type SbomerStats = {
   version: string;
