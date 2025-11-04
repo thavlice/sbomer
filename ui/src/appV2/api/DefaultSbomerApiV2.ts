@@ -19,14 +19,6 @@
 import axios, { Axios, AxiosError } from 'axios';
 import { SbomerApi, SbomerEvent, SbomerGeneration, SbomerManifest, SbomerStats } from '../types';
 
-declare global {
-  interface Window {
-    _env_?: {
-      API_URL?: string;
-    };
-  }
-}
-
 type Options = {
   baseUrl: string;
 };
