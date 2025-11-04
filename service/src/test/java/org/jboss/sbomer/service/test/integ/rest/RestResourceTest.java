@@ -22,6 +22,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -70,6 +71,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.test.InjectMock;
@@ -323,6 +326,17 @@ class RestResourceTest {
         private static final String API_VERSION = "v1beta1";
 
         private final String requestApiPath = String.format("/api/%s/generations", API_VERSION);
+        private static final JsonFactory JSON_FACTORY = new JsonFactory()
+                .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+        private static final ObjectMapper MAPPER = new ObjectMapper(JSON_FACTORY);
+
+        boolean isValidJson(String jsonString) {
+            try (JsonParser parser = MAPPER.createParser(jsonString)) {
+                return parser.readValueAsTree() != null;
+            } catch (Exception e) {
+                return false;
+            }
+        }
 
         @Test
         void shouldHandleInvalidConfig() {
@@ -358,7 +372,8 @@ class RestResourceTest {
 
         @Test
         void shouldRequestPncBuild() {
-            V1Beta1RequestRecord record = given().body("{\"type\": \"pnc-build\", \"buildId\": \"AABBCC\"}")
+
+            Response response = given().body("{\"type\": \"pnc-build\", \"buildId\": \"AABBCC\"}")
                     .when()
                     .contentType(ContentType.JSON)
                     .request("POST", requestApiPath)
@@ -367,8 +382,11 @@ class RestResourceTest {
                     .all(true)
                     .statusCode(202)
                     .extract()
-                    .as(V1Beta1RequestRecord.class);
+                    .response();
 
+            String rawJsonBody = response.asString();
+            assertTrue(isValidJson(rawJsonBody), "Raw json contains duplicate fields or is invalid");
+            V1Beta1RequestRecord record = response.as(V1Beta1RequestRecord.class);
             assertNotNull(record.id());
             assertNotNull(record.receivalTime());
             assertEquals("REST", record.eventType().toString());
@@ -376,12 +394,11 @@ class RestResourceTest {
 
             PncBuildRequestConfig config = (PncBuildRequestConfig) record.requestConfig();
             assertEquals("AABBCC", config.getBuildId());
-
         }
 
         @Test
         void shouldRequestContainerImage() {
-            V1Beta1RequestRecord record = given().body("{\"type\": \"image\", \"image\": \"registry.com/image:tag\"}")
+            Response response = given().body("{\"type\": \"image\", \"image\": \"registry.com/image:tag\"}")
                     .when()
                     .contentType(ContentType.JSON)
                     .request("POST", requestApiPath)
@@ -390,8 +407,11 @@ class RestResourceTest {
                     .all(true)
                     .statusCode(202)
                     .extract()
-                    .as(V1Beta1RequestRecord.class);
+                    .response();
 
+            String rawJsonBody = response.asString();
+            assertTrue(isValidJson(rawJsonBody), "Raw json contains duplicate fields or is invalid");
+            V1Beta1RequestRecord record = response.as(V1Beta1RequestRecord.class);
             assertNotNull(record.id());
             assertNotNull(record.receivalTime());
             assertEquals("REST", record.eventType().toString());
@@ -429,7 +449,7 @@ class RestResourceTest {
                                     .build()))
                     .thenReturn(DeliverableAnalyzerOperation.delAnalyzerBuilder().id("RETID").build());
 
-            V1Beta1RequestRecord record = given().body(
+            Response response = given().body(
                     "{\"type\": \"pnc-analysis\", \"milestoneId\": \"ABCDEF\", \"urls\": [\"http://host.com/a.zip\", \"http://host.com/b.zip\"]}")
                     .when()
                     .contentType(ContentType.JSON)
@@ -439,8 +459,11 @@ class RestResourceTest {
                     .all(true)
                     .statusCode(202)
                     .extract()
-                    .as(V1Beta1RequestRecord.class);
+                    .response();
 
+            String rawJsonBody = response.asString();
+            assertTrue(isValidJson(rawJsonBody), "Raw json contains duplicate fields or is invalid");
+            V1Beta1RequestRecord record = response.as(V1Beta1RequestRecord.class);
             assertNotNull(record.id());
             assertNotNull(record.receivalTime());
             assertEquals("REST", record.eventType().toString());
@@ -453,7 +476,7 @@ class RestResourceTest {
 
         @Test
         void shouldRequestOperation() {
-            V1Beta1RequestRecord record = given().body("{\"type\": \"pnc-operation\", \"operationId\": \"ABCDEF\"}")
+            Response response = given().body("{\"type\": \"pnc-operation\", \"operationId\": \"ABCDEF\"}")
                     .when()
                     .contentType(ContentType.JSON)
                     .request("POST", requestApiPath)
@@ -462,8 +485,11 @@ class RestResourceTest {
                     .all(true)
                     .statusCode(202)
                     .extract()
-                    .as(V1Beta1RequestRecord.class);
+                    .response();
 
+            String rawJsonBody = response.asString();
+            assertTrue(isValidJson(rawJsonBody), "Raw json contains duplicate fields or is invalid");
+            V1Beta1RequestRecord record = response.as(V1Beta1RequestRecord.class);
             assertNotNull(record.id());
             assertNotNull(record.receivalTime());
             assertEquals("REST", record.eventType().toString());
@@ -488,7 +514,7 @@ class RestResourceTest {
                                     .withStatus(SbomGenerationStatus.NEW)
                                     .build()));
 
-            V1Beta1RequestRecord record = given().body("{\"type\": \"errata-advisory\", \"advisoryId\": \"12345\"}")
+            Response response = given().body("{\"type\": \"errata-advisory\", \"advisoryId\": \"12345\"}")
                     .when()
                     .contentType(ContentType.JSON)
                     .request("POST", requestApiPath)
@@ -497,8 +523,11 @@ class RestResourceTest {
                     .all(true)
                     .statusCode(202)
                     .extract()
-                    .as(V1Beta1RequestRecord.class);
+                    .response();
 
+            String rawJsonBody = response.asString();
+            assertTrue(isValidJson(rawJsonBody), "Raw json contains duplicate fields or is invalid");
+            V1Beta1RequestRecord record = response.as(V1Beta1RequestRecord.class);
             assertNotNull(record.id());
             assertNotNull(record.receivalTime());
             assertEquals("REST", record.eventType().toString());
