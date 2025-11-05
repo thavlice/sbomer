@@ -3,4 +3,13 @@ FROM registry.access.redhat.com/ubi9/nginx-120@sha256:c5fdf1b976571cf1f058b8f2dd
 
 COPY ui/dist/ .
 
-CMD nginx -g "daemon off;"
+COPY --chown=0755 images/sbomer-ui/run-with-env.sh /deployments/run-with-env.sh
+
+USER root
+
+RUN chown 1001:0 /opt/app-root/src/config.js && \
+    chmod 755 /deployments/run-with-env.sh
+
+USER 1001
+
+ENTRYPOINT ["/deployments/run-with-env.sh"]
