@@ -14,6 +14,5 @@ To run the application locally, you can use Docker Compose. Make sure you have D
 4. Access the UI at [http://localhost:8081](http://localhost:8081).
 ## Note
 - This setup is mainly used for testing UI Containerfile related issues and changes.
-- This setup is mainly used for testing UI Containerfile related issues and changes.
 
 - For classic UI development, running `./hack/run-local-ui.sh` from the root directory is recommended.
