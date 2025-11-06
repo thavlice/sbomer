@@ -2,12 +2,12 @@
 FROM registry.access.redhat.com/ubi9/nginx-120@sha256:c5fdf1b976571cf1f058b8f2dd955a94d80ced7a43756362d7e87d99e9c92337
 
 COPY ui/dist/ .
-
-COPY --chown=0755 images/sbomer-ui/run-with-env.sh /deployments/run-with-env.sh
+COPY images/sbomer-ui/run-with-env.sh /deployments/run-with-env.sh
 
 USER root
 
 RUN chown 1001:0 /opt/app-root/src/config.js && \
+    chmod ug+rw /opt/app-root/src/config.js && \
     chmod 755 /deployments/run-with-env.sh
 
 USER 1001
