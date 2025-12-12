@@ -55,7 +55,8 @@ public class FeatureFlags implements UnleashSubscriber {
     public static final String TOGGLE_NOTIFY_ANALYSIS = "notify-analysis";
 
     // Atlas
-    public static final String TOGGLE_ATLAS_PUBLISH = "atlas-publish";
+    public static final String TOGGLE_ATLAS_RELEASE_PUBLISH = "atlas-release-publish";
+    public static final String TOGGLE_ATLAS_BUILD_PUBLISH = "atlas-build-publish";
 
     // Errata
     public static final String TOGGLE_ERRATA_INTEGRATION = "errata-integration";
@@ -86,8 +87,11 @@ public class FeatureFlags implements UnleashSubscriber {
     @ConfigProperty(name = "SBOMER_FEATURE_NOTIFY_CONTAINERIMAGE_ENABLED", defaultValue = "false")
     boolean notifyContainerImage;
 
-    @ConfigProperty(name = "SBOMER_FEATURE_ATLAS_PUBLISH_ENABLED", defaultValue = "false")
-    boolean publishToAtlas;
+    @ConfigProperty(name = "SBOMER_FEATURE_ATLAS_PUBLISH_BUILD_ENABLED", defaultValue = "false")
+    boolean publishToAtlasBuild;
+
+    @ConfigProperty(name = "SBOMER_FEATURE_ATLAS_PUBLISH_RELEASE_ENABLED", defaultValue = "false")
+    boolean publishToAtlasRelease;
 
     @ConfigProperty(name = "SBOMER_FEATURE_ERRATA_INTEGRATION_ENABLED", defaultValue = "false")
     boolean errataIntegration;
@@ -134,12 +138,21 @@ public class FeatureFlags implements UnleashSubscriber {
     }
 
     /**
-     * Returns {@code true} if publishing SBOMs to Atlas is enabled.
+     * Returns {@code true} if uploading manifest to Atlas Release instance is enabled.
      *
-     * @return {@code true} if publishing SBOMs to Atlas is enabled, {@code false} otherwise
+     * @return {@code true} if uploading to atlas release is enabled, {@code false} otherwise
      */
-    public boolean atlasPublish() {
-        return unleash.isEnabled(TOGGLE_ATLAS_PUBLISH, publishToAtlas);
+    public boolean atlasReleasePublish() {
+        return unleash.isEnabled(TOGGLE_ATLAS_RELEASE_PUBLISH, publishToAtlasRelease);
+    }
+
+    /**
+     * Returns {@code true} if uploading manifest to Atlas Build instance is enabled.
+     *
+     * @return {@code true} if uploading to atlas build is enabled, {@code false} otherwise
+     */
+    public boolean atlasBuildPublish() {
+        return unleash.isEnabled(TOGGLE_ATLAS_BUILD_PUBLISH, publishToAtlasBuild);
     }
 
     /**
@@ -247,7 +260,8 @@ public class FeatureFlags implements UnleashSubscriber {
                 TOGGLE_NOTIFY_BUILD,
                 TOGGLE_NOTIFY_OPERATION,
                 TOGGLE_NOTIFY_ANALYSIS,
-                TOGGLE_ATLAS_PUBLISH,
+                TOGGLE_ATLAS_BUILD_PUBLISH,
+                TOGGLE_ATLAS_RELEASE_PUBLISH,
                 TOGGLE_ERRATA_INTEGRATION,
                 TOGGLE_STANDARD_ERRATA_RPM_MANIFEST_GENERATION,
                 TOGGLE_STANDARD_ERRATA_IMAGE_MANIFEST_GENERATION,
