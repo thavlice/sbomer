@@ -32,6 +32,8 @@ quarkus:
       url: "https://${sbomer.gerrit.host}"
     "gitlab":
       url: "https://${sbomer.gitlab.host}"
+    "github":
+      url: "https://${sbomer.github.host}"
     "sbomer":
       url: "${sbomer.host}"
     "koji-download":
@@ -77,6 +79,9 @@ sbomer:
   #   host:
   ## GitLab configuration
   gitlab:
+    #host:
+  ## GitHub configuration
+  github:
     #host:
   koji:
     #hub:
