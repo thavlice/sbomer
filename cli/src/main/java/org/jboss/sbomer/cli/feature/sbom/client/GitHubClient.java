@@ -17,6 +17,7 @@
  */
 package org.jboss.sbomer.cli.feature.sbom.client;
 
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,6 +31,7 @@ import jakarta.ws.rs.QueryParam;
  */
 @ApplicationScoped
 @RegisterRestClient(configKey = "github")
+@RegisterProvider(GitHubClientRequestFilter.class)
 @Path("/")
 public interface GitHubClient {
     /**
