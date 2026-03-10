@@ -381,6 +381,7 @@ public class PncNotificationHandler {
                 && (BuildStatus.SUCCESS.equals(msgBody.getBuild().getStatus())
                         || BuildStatus.NO_REBUILD_REQUIRED.equals(msgBody.getBuild().getStatus()))
                 && (BuildType.MVN.equals(msgBody.getBuild().getBuildConfigRevision().getBuildType())
+                        || BuildType.MVN_RPM.equals(msgBody.getBuild().getBuildConfigRevision().getBuildType())
                         || BuildType.GRADLE.equals(msgBody.getBuild().getBuildConfigRevision().getBuildType())
                         || BuildType.NPM.equals(msgBody.getBuild().getBuildConfigRevision().getBuildType())
                         || BuildType.SBT.equals(msgBody.getBuild().getBuildConfigRevision().getBuildType()));

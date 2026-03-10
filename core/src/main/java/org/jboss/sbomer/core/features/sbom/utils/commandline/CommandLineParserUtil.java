@@ -35,46 +35,54 @@ public class CommandLineParserUtil {
 
     public static String getLaunderedCommandScript(Build build) {
         String buildCmdOptions = "";
-        if (org.jboss.pnc.enums.BuildType.MVN.equals(build.getBuildConfigRevision().getBuildType())) {
-            buildCmdOptions = "mvn";
-            try {
-                MavenCommandLineParser lineParser = MavenCommandLineParser.build()
-                        .launder(build.getBuildConfigRevision().getBuildScript());
-                buildCmdOptions = lineParser.getRebuiltMvnCommandScript();
-            } catch (IllegalArgumentException exc) {
-                log.error("Could not launder the provided build command script! Using the default build command", exc);
+        switch (build.getBuildConfigRevision().getBuildType()) {
+            case MVN, MVN_RPM -> {
+                buildCmdOptions = "mvn";
+                try {
+                    MavenCommandLineParser lineParser = MavenCommandLineParser.build()
+                            .launder(build.getBuildConfigRevision().getBuildScript());
+                    buildCmdOptions = lineParser.getRebuiltMvnCommandScript();
+                } catch (IllegalArgumentException exc) {
+                    log.error(
+                            "Could not launder the provided build command script! Using the default build command",
+                            exc);
+                }
             }
-        } else if (org.jboss.pnc.enums.BuildType.GRADLE.equals(build.getBuildConfigRevision().getBuildType())) {
-            Optional<String> gradleMajorVersion = EnvironmentAttributesUtils
-                    .getGradleSDKManCompliantMajorVersion(build.getEnvironment().getAttributes());
-            if (gradleMajorVersion.isPresent()) {
-                buildCmdOptions += (Constants.GRADLE_MAJOR_VERSION_COMMAND_PREFIX + gradleMajorVersion.get().trim()
-                        + "#");
-            }
+            case GRADLE -> {
+                Optional<String> gradleMajorVersion = EnvironmentAttributesUtils
+                        .getGradleSDKManCompliantMajorVersion(build.getEnvironment().getAttributes());
+                if (gradleMajorVersion.isPresent()) {
+                    buildCmdOptions += (Constants.GRADLE_MAJOR_VERSION_COMMAND_PREFIX + gradleMajorVersion.get().trim()
+                            + "#");
+                }
 
-            buildCmdOptions += "gradle";
-            // It looks like we need to override the final version as it might not be picked up in the CycloneDX
-            // generation, which would be overridden by the gradle.properties. The BREW_BUILD_VERSION attribute contains
-            // the version we need.
-            Optional<String> versionOverride = getVersionFromBuildAttributes(build);
-            if (versionOverride.isPresent()) {
-                buildCmdOptions += " -Pversion=" + versionOverride.get();
+                buildCmdOptions += "gradle";
+                // It looks like we need to override the final version as it might not be picked up in the CycloneDX
+                // generation, which would be overridden by the gradle.properties. The BREW_BUILD_VERSION attribute
+                // contains
+                // the version we need.
+                Optional<String> versionOverride = getVersionFromBuildAttributes(build);
+                if (versionOverride.isPresent()) {
+                    buildCmdOptions += " -Pversion=" + versionOverride.get();
+                }
             }
-        } else if (org.jboss.pnc.enums.BuildType.NPM.equals(build.getBuildConfigRevision().getBuildType())) {
-            Optional<String> versionOverride = getVersionFromBuildAttributes(build);
-            if (versionOverride.isPresent()) {
-                buildCmdOptions += "npm version " + versionOverride.get();
+            case NPM -> {
+                Optional<String> versionOverride = getVersionFromBuildAttributes(build);
+                if (versionOverride.isPresent()) {
+                    buildCmdOptions += "npm version " + versionOverride.get();
+                }
             }
-        } else if (org.jboss.pnc.enums.BuildType.SBT.equals(build.getBuildConfigRevision().getBuildType())) {
-            Optional<String> versionOverride = getVersionFromBuildAttributes(build);
-            Optional<String> nameOverride = getNameFromBuildAttributes(build);
-            if (versionOverride.isPresent()) {
-                buildCmdOptions += "set version := \"" + versionOverride.get() + "\"";
-            }
-            if (nameOverride.isPresent()) {
-                buildCmdOptions += "; set name := \"" + nameOverride.get()
-                        .replace(".", Constants.SBT_COMPONENT_DOT_SEPARATOR)
-                        .replace(":", Constants.SBT_COMPONENT_COORDINATES_SEPARATOR) + "\"; ";
+            case SBT -> {
+                Optional<String> versionOverride = getVersionFromBuildAttributes(build);
+                Optional<String> nameOverride = getNameFromBuildAttributes(build);
+                if (versionOverride.isPresent()) {
+                    buildCmdOptions += "set version := \"" + versionOverride.get() + "\"";
+                }
+                if (nameOverride.isPresent()) {
+                    buildCmdOptions += "; set name := \"" + nameOverride.get()
+                            .replace(".", Constants.SBT_COMPONENT_DOT_SEPARATOR)
+                            .replace(":", Constants.SBT_COMPONENT_COORDINATES_SEPARATOR) + "\"; ";
+                }
             }
         }
         return buildCmdOptions;

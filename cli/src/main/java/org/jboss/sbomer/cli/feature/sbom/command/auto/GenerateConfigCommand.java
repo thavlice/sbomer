@@ -235,7 +235,7 @@ public class GenerateConfigCommand implements Callable<Integer> {
         }
         Map<String, String> envConfig = null;
         switch (build.getBuildConfigRevision().getBuildType()) {
-            case GRADLE, MVN, SBT:
+            case GRADLE, MVN, MVN_RPM, SBT:
                 envConfig = EnvironmentAttributesUtils.getSDKManCompliantAttributes(buildEnvAttributes);
                 break;
             case NPM:
@@ -271,7 +271,7 @@ public class GenerateConfigCommand implements Callable<Integer> {
 
         return switch (buildType) {
             case GRADLE -> GeneratorType.GRADLE_CYCLONEDX;
-            case MVN -> GeneratorType.MAVEN_CYCLONEDX;
+            case MVN, MVN_RPM -> GeneratorType.MAVEN_CYCLONEDX;
             case NPM -> CommandLineInspectorUtil.hasYarnEvidence(buildScript) ? GeneratorType.YARN_CYCLONEDX
                     : GeneratorType.NPM_CYCLONEDX;
             case SBT -> GeneratorType.SBT_CYCLONEDX;
