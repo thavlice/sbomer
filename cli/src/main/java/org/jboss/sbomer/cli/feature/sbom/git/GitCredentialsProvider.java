@@ -57,12 +57,12 @@ public class GitCredentialsProvider {
                 // For GitHub, username can be anything when using token
                 return new UsernamePasswordCredentialsProvider("token", githubToken.get());
             } else {
-                log.debug("No GitHub token configured, attempting public clone from: {}", scmUrl);
+                log.debug("No GitHub token configured for SCM host {}", scmUrl);
                 return null;
             }
         }
 
-        log.debug("No credentials configured for SCM host, attempting public clone from: {}", scmUrl);
+        log.debug("No credentials configured for SCM host {}", scmUrl);
         return null;
     }
 
